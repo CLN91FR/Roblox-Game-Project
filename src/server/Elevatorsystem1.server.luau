@@ -168,11 +168,11 @@ end
 --------------- FONCTION DE DEPLACEMENT  --------------------------
 
 -- fonction de surveillance de l'étage le plus proche de l'elevator car (utile pour le compteur)
-local function Surveillance_etage()
+local connexion_surveillance_compteur = nil --on initialise cette variable qui servira à stocker l'heartbeat de cette fonction (nécéssaire pour le bon fonctionnement du script)
+local function Surveillance_etage(etage_cible)
 	
 	local hauteur_elevatorfloor = Elevatorcar_Floor.Position.Y -- position d'hauteur du sol de l'ascenseur 
 	local minimum_ecart = 10000 -- valeur haute pour initialiser l'écart de l'étage le plus proche 
-	local flooractuelle = 0 -- à l'initialisation étage le plus proche est le RDC donc 0
 	local etage_leplusproche = 0 
 	--- Boucle permettant de trouver l'étage le plus proche du sol de l'élevator
 	-- etage : l'étage du dictionnaire étudié, hauteur : sa valeur dans le dictionnaire (valeur position Y), Hauteur_floors : nom du dictionnaire de toute les hauteur des étages
@@ -186,11 +186,16 @@ local function Surveillance_etage()
 	end
 	
 	-- Si l'étage le plus proche n'est plus celui actuelle alors on affiche le nouvel étage sur le compteur 
-	if flooractuelle ~= etage_leplusproche then
-		flooractuelle = etage_leplusproche
+	if etageActuel ~= etage_leplusproche then
+		etageActuel = etage_leplusproche
 		Demande_symbole_compteur:Fire(etage_leplusproche) -- On active la fonction demande symbole qui est dans le script Script_Compteur 
 	end
-	-- faire la fin une fois que ascenseur arrivé pour déconnecter le hartbeat
+	-- Si l'étage le plus proche est l'étage ciblée pour la fin du trajet alors plus besoins de changer le compteur
+	if etage_leplusproche == etage_cible then
+		print("fin du compteur étage destination atteint")
+		-- On arrête l'heartbeat car plus besoin de surveiller (fin de la fonction donc)
+		connexion_surveillance_compteur:Disconnect()
+	end
 end
 
 
@@ -306,7 +311,12 @@ local function moveToFloor(targetFloorIndex)
 		Enum.EasingStyle.Quad, 
 		Enum.EasingDirection.InOut
 	)
-	
+
+	-- Avant de lancer l'animation de mouvement de l'ascenseur, on lance la surveillance qui actualisera l'affichage du compteur selon l'étage atteint 
+connexion_surveillance_compteur = RunService.Heartbeat:Connect(function()
+    Surveillance_etage(targetFloorIndex)
+end)
+
 	-- 4. Exécution du mouvement
 	local targetPart = floors[targetFloorIndex]
 	local goal = {CFrame = targetPart.CFrame}
@@ -318,7 +328,7 @@ local function moveToFloor(targetFloorIndex)
 	tween.Completed:Wait()
 	
 	-- On envoie au compteur l'ordre d'afficher le numéro de l'étage arrivé
-	Demande_symbole_compteur:Fire(targetFloorIndex) -- On active la fonction demande symbole qui est dans le script Script_Compteur 
+	-- Demande_symbole_compteur:Fire(targetFloorIndex) -- On active la fonction demande symbole qui est dans le script Script_Compteur 
 	
 	-- 5. On ouvre les portes quand on arrive
 	OpenDoors(targetFloorIndex)
