@@ -117,7 +117,7 @@ local DiscoCases = {
 
 
 ----------------------------------------------------------------------------
-           -- FONCTION FONCTION FONCTION FONCTION FONCTION !!! --
+           -- FONCTION FONCTION FONCTION FONCTION FONCTION !!!  |    |     |
 ----------------------------------------------------------------------------
 
 
@@ -168,7 +168,7 @@ end
 --------------- FONCTION DE DEPLACEMENT  --------------------------
 
 -- fonction de surveillance de l'étage le plus proche de l'elevator car (utile pour le compteur)
-local connexion_surveillance_compteur = nil --on initialise cette variable qui servira à stocker l'heartbeat de cette fonction (nécéssaire pour le bon fonctionnement du script)
+local connexion_surveillance_compteur = nil --on initialise cette variable qui servira à stocker l'heartbeat de cette fonction (nécéssaire pour le bon fonctionnement du script) voir ligne 317
 local function Surveillance_etage(etage_cible)
 	
 	local hauteur_elevatorfloor = Elevatorcar_Floor.Position.Y -- position d'hauteur du sol de l'ascenseur 
@@ -188,7 +188,9 @@ local function Surveillance_etage(etage_cible)
 	-- Si l'étage le plus proche n'est plus celui actuelle alors on affiche le nouvel étage sur le compteur 
 	if etageActuel ~= etage_leplusproche then
 		etageActuel = etage_leplusproche
-		Demande_symbole_compteur:Fire(etage_leplusproche) -- On active la fonction demande symbole qui est dans le script Script_Compteur 
+		model:SetAttribute("Floor", etageActuel) -- on actualise l'attribute de l'ascenseur pour savoir l'étage actuelle de l'ascenseur
+		 -- On active la fonction demande symbole qui est dans le script Script_Compteur en mettant en argument symbole et couleur
+		Demande_symbole_compteur:Fire(etage_leplusproche, Color3.fromRGB(255,0,0),0)
 	end
 	-- Si l'étage le plus proche est l'étage ciblée pour la fin du trajet alors plus besoins de changer le compteur
 	if etage_leplusproche == etage_cible then
@@ -322,11 +324,14 @@ end)
 	local goal = {CFrame = targetPart.CFrame}
 	local tween = TweenService:Create(car.PrimaryPart, info, goal)
 
+	model:SetAttribute("Mooving", true) -- on actualise l'attribute de l'ascenseur pour savoir si la cage d'ascenseur se déplace
+	
 	tween:Play()
-
+	
 	-- C'est CETTE LIGNE qui empêche le script de continuer trop vite :
 	tween.Completed:Wait()
-	
+
+	model:SetAttribute("Mooving", false) -- la cage d'ascenseur s'est arrêter donc on actualise l'attribute
 	-- On envoie au compteur l'ordre d'afficher le numéro de l'étage arrivé
 	-- Demande_symbole_compteur:Fire(targetFloorIndex) -- On active la fonction demande symbole qui est dans le script Script_Compteur 
 	
@@ -395,7 +400,7 @@ end
 -- Fonction pour son aléatoire + effet 
 local function DiscoSound(time)
 	local SongList= {}
-	for _, son in pairs(SoundDisco:GetChildren()) do -- i le nombre de son
+	for _, son in pairs(SoundDisco:GetChildren()) do -- "son" le son actuelle par ittération, (SoundDisco:GetChildren()) : le parent de tout les sons (le groupe) 
 		table.insert(SongList, son) -- On met tout les éléments de DiscoSound dans une liste
 	end
 	local lenghtlist=#SongList -- on récupère la longueur de la liste avec le #
