@@ -1,1 +1,1 @@
-print("Rojo est connecté et sécurisé !")
+print("Rojo est connecté et sécurisé")

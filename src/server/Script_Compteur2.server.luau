@@ -1,7 +1,7 @@
 
 local Workspace = game:GetService("Workspace")
 local Elevator = Workspace:WaitForChild("Elevator") -- récupération du modèle ascenseur
-local Compt = Elevator:WaitForChild("Compteur_elevator1") -- récupération du modèle compteur
+local Compt = Elevator:WaitForChild("Compteur_elevator2") -- récupération du modèle compteur
 local Light = Compt:WaitForChild("BoardLight") -- récupération ensemble lumières model
 local Demande = Compt:WaitForChild("Demande") -- le Bindable Event qui seras le signal envoyé pour utiliser notre compteur
 
@@ -17,6 +17,7 @@ local OrigineMaterial = Light:WaitForChild("1_1").Material
 ----------------------------------------------------------------------------------
 ------------------- !!! TABLEAU DES SYMBOLES !!! ---------------------------------
 ----------------------------------------------------------------------------------
+
 
 
 local Draw_arrowUP =
@@ -268,6 +269,9 @@ local function AnimationEtoile(color)
 			table_demande = draw[nom_Draw]
 			Affichage_symbole(table_demande, color)
 			task.wait(0.1) -- petite attente pour effet d'animation pas trop rapide
+			if i==4 then
+			task.wait(0.1) -- petite attente supplémentaire pour montrer plus longtemps l'étoile final
+			end
 		end
 	end
 end
@@ -300,6 +304,4 @@ local function AllumerSymbole(symbole, color, decalage)
 	Affichage_symbole(Table_demander, color)
 end
 
--- Etat initial on l'ascenseur est à l'étage 0 
-AllumerSymbole(0, Color3.fromRGB(255,0,0), 0)
 Demande.Event:Connect(AllumerSymbole) -- On connecte le bindable events pour qu'il déclent la fonction de dessin de symbole lorsqu'il recoit le signal

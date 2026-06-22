@@ -14,9 +14,15 @@ local RunService = game:GetService("RunService") --Pour l'outil HeartBeat
 
 local model = Workspace:WaitForChild("Elevator") -- récupération du modèle ascenseur
 local car = model:WaitForChild("ElevatorCar")
-local compteur = model:WaitForChild("Compteur_elevator") 
-local Demande_symbole_compteur = compteur:WaitForChild("Demande")
 local Elevatorcar_Floor = car:WaitForChild("sol") 
+
+-- compteur 1
+local compteur1 = model:WaitForChild("Compteur_elevator1") 
+local Demande_symbole_compteur1 = compteur1:WaitForChild("Demande")
+
+-- compteur 2
+local compteur2 = model:WaitForChild("Compteur_elevator2") 
+local Demande_symbole_compteur2 = compteur2:WaitForChild("Demande")
 
 
 
@@ -190,7 +196,7 @@ local function Surveillance_etage(etage_cible)
 		etageActuel = etage_leplusproche
 		model:SetAttribute("Floor", etageActuel) -- on actualise l'attribute de l'ascenseur pour savoir l'étage actuelle de l'ascenseur
 		 -- On active la fonction demande symbole qui est dans le script Script_Compteur en mettant en argument symbole et couleur
-		Demande_symbole_compteur:Fire(etage_leplusproche, Color3.fromRGB(255,0,0),0)
+		Demande_symbole_compteur1:Fire(etage_leplusproche, Color3.fromRGB(255,0,0),0)
 	end
 	-- Si l'étage le plus proche est l'étage ciblée pour la fin du trajet alors plus besoins de changer le compteur
 	if etage_leplusproche == etage_cible then
@@ -325,7 +331,15 @@ end)
 	local tween = TweenService:Create(car.PrimaryPart, info, goal)
 
 	model:SetAttribute("Mooving", true) -- on actualise l'attribute de l'ascenseur pour savoir si la cage d'ascenseur se déplace
-	
+	-- on lance l'animation de flèche selon si l'ascenseur va vers le haut ou bas 
+	if targetFloorIndex > etageActuel then
+		-- affichage d'une flèche vers le haut de couleur rouge dont le décalage ira vers le haut d'un pas de 1
+		Demande_symbole_compteur2:Fire("arrowUP", Color3.fromRGB(255,0,0), -1)
+	else
+		-- affichage d'une flèche vers le haut de couleur rouge dont le décalage ira vers le haut d'un pas de 1
+		Demande_symbole_compteur2:Fire("arrowDOWN", Color3.fromRGB(255,0,0), 1)
+	end
+
 	tween:Play()
 	
 	-- C'est CETTE LIGNE qui empêche le script de continuer trop vite :
@@ -537,12 +551,17 @@ local function ActivateDisco(player)
 	-- fermeture des portes 
 	CloseDoors(etageActuel)
 	DiscoAnimation = true --on active le disco
+	-- on change la valeur de l'attribute disco afin de pouvoir lancer l'affichage du compteur (2)
+	model:SetAttribute("disco", true)
+	-- Demande d'affichage de l'animation Star (étoile) sur le compteur 2
+	Demande_symbole_compteur2:Fire("STAR", Color3.fromRGB(255, 255, 0),0)
 	DiscoSound(13) --fonction musique disco
 	DiscoDance(player) --fonction danse 
 	DiscoSolAndLight()
 	ActivateBouleDisco()
 	wait(13) -- temps du mode disco
 	DiscoAnimation =false --on arrete le disco
+	model:SetAttribute("disco", false)
 	--on arrete l'animation de danse du joueur si elle existe encore
 	if dansesEnCours[player] then
 		dansesEnCours[player]:Stop() -- on arrete l'animation du joueur concerné
