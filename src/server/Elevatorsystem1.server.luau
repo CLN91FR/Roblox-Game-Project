@@ -5,6 +5,16 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Animations = ReplicatedStorage:WaitForChild("Animation_go") --fichiers contenant toutes les animations
 local RunService = game:GetService("RunService") --Pour l'outil HeartBeat
 
+-- !!! Si ajout d'un nouvel étage, faire : !!!
+-- / ajout du model de l'étage (sol a hauteur de l'étage) dans la liste "floors"
+-- / ajout de la hauteur de l'étage dans la liste "Hauteur_floors"
+-- / faire +1 au "i" dans la boucle for i "setup_buttons(i)"
+-- / faire +1 au "i" de la limite du if (number < i) dans la fonction "ButtonLightAndAction"
+-- / ajout des boutons intérieurs et extérieures dans la liste "buttons" et "externalbuttons"
+-- / ajout des portes extérieures de l'étage à la liste "externalDoors"
+------------------------------------------------------------------------------------------------
+
+
 -- Liste d'animation qu'on initialise ----------------------------------------------
 
 	local floss = Animations:WaitForChild("floss") --on récupère la danse du floss
@@ -16,14 +26,9 @@ local model = Workspace:WaitForChild("Elevator") -- récupération du modèle as
 local car = model:WaitForChild("ElevatorCar")
 local Elevatorcar_Floor = car:WaitForChild("sol") 
 
--- compteur 1
-local compteur1 = model:WaitForChild("Compteur_elevator1") 
-local Demande_symbole_compteur1 = compteur1:WaitForChild("Demande")
-
--- compteur 2
-local compteur2 = model:WaitForChild("Compteur_elevator2") 
-local Demande_symbole_compteur2 = compteur2:WaitForChild("Demande")
-
+-- bindable_event des compteur (afficheur)
+local Dossier_BindableEvent = ReplicatedStorage:WaitForChild("Bindable_Event")
+local Signal_Demande_Affichage = Dossier_BindableEvent:WaitForChild("Elevator_Demande_Affichage")
 
 
 -- Récupération Son ------------------------------------
@@ -195,8 +200,8 @@ local function Surveillance_etage(etage_cible)
 	if etageActuel ~= etage_leplusproche then
 		etageActuel = etage_leplusproche
 		model:SetAttribute("Floor", etageActuel) -- on actualise l'attribute de l'ascenseur pour savoir l'étage actuelle de l'ascenseur
-		 -- On active la fonction demande symbole qui est dans le script Script_Compteur en mettant en argument symbole et couleur
-		Demande_symbole_compteur1:Fire(etage_leplusproche, Color3.fromRGB(255,0,0),0)
+		 -- On active la fonction demande symbole qui est dans le script Script_Compteur en mettant en argument symbole et couleur et l'affichant sur tout les compteur de tag "Compteur_elevator_floor"
+		Signal_Demande_Affichage:Fire(etage_leplusproche, Color3.fromRGB(255,0,0), 0 ,"Compteur_elevator_floor")
 	end
 	-- Si l'étage le plus proche est l'étage ciblée pour la fin du trajet alors plus besoins de changer le compteur
 	if etage_leplusproche == etage_cible then
@@ -333,11 +338,11 @@ end)
 	model:SetAttribute("Mooving", true) -- on actualise l'attribute de l'ascenseur pour savoir si la cage d'ascenseur se déplace
 	-- on lance l'animation de flèche selon si l'ascenseur va vers le haut ou bas 
 	if targetFloorIndex > etageActuel then
-		-- affichage d'une flèche vers le haut de couleur rouge dont le décalage ira vers le haut d'un pas de 1
-		Demande_symbole_compteur2:Fire("arrowUP", Color3.fromRGB(255,0,0), -1)
+		-- affichage d'une flèche vers le haut de couleur rouge dont le décalage ira vers le haut d'un pas de 1 sur tout les compteur de tag "Compteur_elevator_action"
+		Signal_Demande_Affichage:Fire("arrowUP", Color3.fromRGB(255,0,0), -1,"Compteur_elevator_action")
 	else
-		-- affichage d'une flèche vers le haut de couleur rouge dont le décalage ira vers le haut d'un pas de 1
-		Demande_symbole_compteur2:Fire("arrowDOWN", Color3.fromRGB(255,0,0), 1)
+		-- affichage d'une flèche vers le haut de couleur rouge dont le décalage ira vers le haut d'un pas de 1 sur tout les compteur de tag "Compteur_elevator_action"
+		Signal_Demande_Affichage:Fire("arrowDOWN", Color3.fromRGB(255,0,0), 1,"Compteur_elevator_action")
 	end
 
 	tween:Play()
@@ -543,7 +548,7 @@ local function ActivateBouleDisco()
 	end)	
 end
 
-
+-- "player" joueur ayant activé la fonction (transmis par le bouton detector click)
 local function ActivateDisco(player)
 	if isDiscoActive or estEnMouvement or estBoutonAllumerExt or estBoutonAllumerInt  then return end --si le disco ou l'ascenseur est en mouvement est déjà actif, on ne fait rien
 	--si le bouton est appuyé on lance le mode disco
@@ -554,12 +559,12 @@ local function ActivateDisco(player)
 	-- on change la valeur de l'attribute disco afin de pouvoir lancer l'affichage du compteur (2)
 	model:SetAttribute("disco", true)
 	-- Demande d'affichage de l'animation Star (étoile) sur le compteur 2
-	Demande_symbole_compteur2:Fire("STAR", Color3.fromRGB(255, 255, 0),0)
+	Signal_Demande_Affichage:Fire("STAR", Color3.fromRGB(255, 255, 0),0,"Compteur_elevator_action")
 	DiscoSound(13) --fonction musique disco
 	DiscoDance(player) --fonction danse 
 	DiscoSolAndLight()
 	ActivateBouleDisco()
-	wait(13) -- temps du mode disco
+	task.wait(13) -- temps du mode disco
 	DiscoAnimation =false --on arrete le disco
 	model:SetAttribute("disco", false)
 	--on arrete l'animation de danse du joueur si elle existe encore
@@ -643,8 +648,8 @@ end
 
 
 -- CONFIGURATION DES CLICS
--- On envoie le NUMÉRO de l'étage à la fonction
--- 2. On crée une petite fonction "magique" pour gagner du temps
+
+-- fonction permettant de connectant le clique des boutons intérieur et extérieur de l'étage "floorIndex" à les fonctions et actions qu'il va devoir déclencher
 local function setupButtons(floorIndex)
 	-- On connecte le bouton INTERNE
 	buttons[floorIndex].Bouton1.MouseClick:Connect(function(player) -- "player" joueur qui as touché le bouton
@@ -662,12 +667,12 @@ local function setupButtons(floorIndex)
 	
 end
 
--- 3. On lance la configuration pour chaque étage
+-- On lance la configuration pour chaque étage 
 for i = 0, 2 do
 	setupButtons(i)
 end
 
--- configuration bouton disco
+-- configuration bouton disco (pareil que pour la fonction pour boutons normales ci dessus)
 
 buttons[10].BoutonDisco.MouseClick:Connect(function(player) -- "player" joueur qui as touché le bouton
 	print("Le joueur " .. player.Name .. " a cliqué sur le bouton disco") -- debug

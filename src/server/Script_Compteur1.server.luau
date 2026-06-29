@@ -1,17 +1,22 @@
-
+local CollectionService = game:GetService("CollectionService") -- permet d'utiliser le système de tag
 local Workspace = game:GetService("Workspace")
 local Elevator = Workspace:WaitForChild("Elevator") -- récupération du modèle ascenseur
-local Compt = Elevator:WaitForChild("Compteur_elevator1") -- récupération du modèle compteur
-local Light = Compt:WaitForChild("BoardLight") -- récupération ensemble lumières model
-local Demande = Compt:WaitForChild("Demande") -- le Bindable Event qui seras le signal envoyé pour utiliser notre compteur
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Dossier_BindableEvent = ReplicatedStorage:WaitForChild("Bindable_Event")
+local Signal_Demande_Affichage = Dossier_BindableEvent:WaitForChild("Elevator_Demande_Affichage")
 
-local board ={} --tableau des ampoules réeles
+
+-- !!! si ajout d'un nouveau compteur, faire : !!!
+-- / mettre la tag addapté a son modèle
+-- / bien nommé et avoir la même arborescense dans son modèle (par exemple même endroit pour les light que sur les autres compteurs, et même nom pour les modèles qui vont être modifié ou utilisé par le script)
+-- / pour l'instant lignes et colonnes pareil pour tout les compteurs mais si changement plus tard, adapter le script pour données en argument ligne et colonnes du compteur
+-- / si nouvel animation voulu, initialiser les matrices image par image à cotés de tout les tableau, et les ajouter dans la table "draw"
+-- / si plus tard beaucoup animation alors faire fonction animate(symbole, table_symbole_actuelle, temps_transition_entre_chaque_image) où chaque image matrice du symbole serait peut être dans une table dictionnaires  
+-------------------------------------------------------------------------------------------------
 
 local lignes=12  --variable lignes
 local colonnes=8 --variable colonnes
 
-local OrigineColor = Light:WaitForChild("1_1").Color
-local OrigineMaterial = Light:WaitForChild("1_1").Material
 
 
 ----------------------------------------------------------------------------------
@@ -186,13 +191,13 @@ end
 
 
 --fonction pour reset affichage du board
-local function reset_table()
+local function reset_table(board,origineColor,origineMaterial)
 
 -- renitialisation du tableau d'ampoules pour avoir un tableau éteint
 	for i=1, lignes do
 		for j=1, colonnes do
-			board[i][j].Material=OrigineMaterial  -- matérieaux d'origine
-			board[i][j].Color=OrigineColor  -- couleur d'origine
+			board[i][j].Material=origineMaterial  -- matérieaux d'origine
+			board[i][j].Color=origineColor  -- couleur d'origine
 		end
 	end 
 	print("reset du compteur pour afficher") 
@@ -216,21 +221,13 @@ local function decal_ligne (table, decalage)
 
 end	
 
--- Création du tableau contenant chaque light sous la forme d'un matrice 12*8
-for i=1,lignes do
-	board[i]={} -- on ajoute le tableau de la ligne i
-	for j=1,colonnes do
-		local nom_ampoule = i.."_"..j
-		board[i][j]=Light:WaitForChild(nom_ampoule)
-	end
-	
-end
+
 
 -- fonction pour afficher la symbole "table_symbole" de couleur "color" et qui fera une animation de décalage "decalage" (0 si pas d'animation voulu)
-local function Affichage_symbole(table_symbole, color)
+local function Affichage_symbole(table_symbole, color,board,origineColor,origineMaterial)
 
 	-- reset du board
-	reset_table()
+	reset_table(board,origineColor,origineMaterial)
 	-- application du symbole sur le board en parcourant le Draw
 
 	-- On va parcourir le Draw ligne par ligne pour le reproduire sur le board
@@ -247,7 +244,7 @@ end
 
 
 -- fonction pour l'animation étoile
-local function AnimationEtoile(color)
+local function AnimationEtoile(color,board,origineColor,origineMaterial)
 	--intialisation de la variable qui nous indiquera quel matrice voulu à chaque tour de la boucle
 	local nom_Draw = nil
 	local table_demande = nil
@@ -258,7 +255,7 @@ local function AnimationEtoile(color)
 		for i=1, 5 do
 			-- si i = 5 (dernier état de l'animation) alors on remet l'écran à zero (tout vide)
 			if i==5 then
-				reset_table()
+				reset_table(board, origineColor, origineMaterial)
 				-- on ne suit pas le code or du if car fin d'une séquence d'animation
 				task.wait(0.1) -- petite attente pour effet d'animation pas trop rapide
 				continue
@@ -266,18 +263,26 @@ local function AnimationEtoile(color)
 			-- nous permet de d'obtenir Draw_STAR1 puis DRAW_STAR2 etc... à chaque nouvelle itération
 			nom_Draw = "Draw_STAR"..tostring(i)
 			table_demande = draw[nom_Draw]
-			Affichage_symbole(table_demande, color)
+			Affichage_symbole(table_demande, color, board,origineColor,origineMaterial)
 			task.wait(0.1) -- petite attente pour effet d'animation pas trop rapide
 		end
 	end
+	reset_table(board, origineColor, origineMaterial)
 end
 
 
-local function AllumerSymbole(symbole, color, decalage)
+local function Traitement_Symbole(Compteur ,symbole, color, decalage, board)
 	
+
+	local Light = Compteur:WaitForChild("BoardLight") -- récupération ensemble lumières model
+
+
+	local origineColor = Light:WaitForChild("1_1").Color
+	local origineMaterial = Light:WaitForChild("1_1").Material
+
 	-- si on demande l'étoile alors faire l'animation spécifique
 	if symbole == "STAR" then
-		AnimationEtoile(color)
+		AnimationEtoile(color,board,origineColor,origineMaterial)
 		-- pour sortir de la fonction sans faire le reste du code de cette fonction
 		return
 	end
@@ -289,17 +294,70 @@ local function AllumerSymbole(symbole, color, decalage)
 	-- si le décalage n'est pas nul on doit faire une animation
 	if decalage ~= 0 then
 		while Elevator:GetAttribute("Mooving") == true do  -- tant que l'ascenseur n'est pas arrivé on continue la boucle while d'animation
-			Affichage_symbole(Table_demander, color)
+			Affichage_symbole(Table_demander, color, board, origineColor, origineMaterial)
 			Table_demander = decal_ligne(Table_demander, decalage) -- on applique le decalage
 			task.wait(0.1) -- petite attente avant d'afficher prochaine matrice decaler
 		end
-		reset_table() -- remettre l'affichage à vide car plus de mouvement
+		reset_table(board, origineColor, origineMaterial) -- remettre l'affichage à vide car plus de mouvement
 		return --mettre fin à la fonction après que l'ascenseur soit arriver
 	end	
 	-- on utiliser la fonction qui va afficher la matrice Table_demander avec sa couleur
-	Affichage_symbole(Table_demander, color)
+	Affichage_symbole(Table_demander, color, board, origineColor, origineMaterial)
 end
 
--- Etat initial on l'ascenseur est à l'étage 0 
-AllumerSymbole(0, Color3.fromRGB(255,0,0), 0)
-Demande.Event:Connect(AllumerSymbole) -- On connecte le bindable events pour qu'il déclent la fonction de dessin de symbole lorsqu'il recoit le signal
+
+
+-- fonction qui va initialiser chaque objet selon le l'objet donner ("compteur") afin de définir pour les autre scripts de quel compteur on parle 
+local function Initialisation_element(Compteur, board)
+
+
+	local Light = Compteur:WaitForChild("BoardLight") -- récupération ensemble lumières model
+
+
+	-- Création du tableau contenant chaque light sous la forme d'un matrice 12*8
+	for i=1,lignes do
+		board[i]={} -- on ajoute le tableau de la ligne i
+		for j=1,colonnes do
+			local nom_ampoule = i.."_"..j
+			board[i][j]=Light:WaitForChild(nom_ampoule)
+		end
+		
+	end
+
+end
+
+
+
+-- fonction final qui va initialiser chaque objet selon le tag (tag_afficheur) puis activera autre fonction pour affichage de "symbole" de couleur "color" et d'une animation de "decalage" par ligne
+local function AllumerSymbole(symbole, color, decalage, tag_afficheur)
+	-- boucle qui fait pour tout les objet portant ce tag :
+	for _, afficheur in pairs(CollectionService:GetTagged(tag_afficheur))	do
+		task.spawn(function(afficheur_cible)
+			
+			local board_du_task = {} -- table unique à chaque task
+			Initialisation_element(afficheur_cible, board_du_task)
+			
+
+			--on peut maintenant lancer la fonction d'affichage général maintenant que les part et objet ont bien était ciblé
+			Traitement_Symbole(afficheur_cible,symbole, color, decalage,board_du_task)
+		end, afficheur) -- on associe la variable afficheur de la boucle à l'argument afficheur_cible du task spawn 
+	end
+
+end
+
+
+
+-- Etat initial on l'ascenseur est à l'étage 0 pour les compteurs floor
+for _,afficheur in pairs(CollectionService:GetTagged("Compteur_elevator_floor")) do
+
+	-- initilialisation de tout les part du compteur demandé
+		local board_initialise={}
+		Initialisation_element(afficheur,board_initialise)
+
+	-- affichage du symbole 0 pour l'avoir par défaut pour les compteurs floor
+		Traitement_Symbole(afficheur,0, Color3.fromRGB(255,0,0), 0, board_initialise)
+
+end
+
+-- Connection de la fonction final aux bindable_Event
+Signal_Demande_Affichage.Event:Connect(AllumerSymbole)
