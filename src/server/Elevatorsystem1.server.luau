@@ -23,8 +23,14 @@ local RunService = game:GetService("RunService") --Pour l'outil HeartBeat
 
 
 local model = Workspace:WaitForChild("Elevator") -- récupération du modèle ascenseur
-local car = model:WaitForChild("ElevatorCar")
-local Elevatorcar_Floor = car:WaitForChild("sol") 
+local car = model:WaitForChild("Elevator_Car")
+local FloorsGroup = model:WaitForChild("Floors")
+local Exterior = model:WaitForChild("Exterior")
+local Structure = car:WaitForChild("Structure")
+local BackWallElement = Structure:WaitForChild("BackWallElement")
+local CommandBoard = BackWallElement:WaitForChild("CommandBoard")
+local Ground = Structure:WaitForChild("Ground")
+local Elevatorcar_Floor = Ground:WaitForChild("sol") 
 
 -- bindable_event des compteur (afficheur)
 local Dossier_BindableEvent = ReplicatedStorage:WaitForChild("Bindable_Event")
@@ -33,7 +39,7 @@ local Signal_Demande_Affichage = Dossier_BindableEvent:WaitForChild("Elevator_De
 
 -- Récupération Son ------------------------------------
 
-	local Sound = car:WaitForChild("Sound")
+	local Sound = car:WaitForChild("Sounds")
 	local SoundDoor = Sound:WaitForChild("ElevatorDoor")
 	local SoundWaiting = Sound:WaitForChild("WaitingSound")
 	local SoundDisco = Sound:WaitForChild("DiscoSon")
@@ -46,9 +52,9 @@ local etageActuel = 0
 
 -- Récupération des Étages
 local floors = {
-	[0] = model:WaitForChild("Floor1"),
-	[1] = model:WaitForChild("Floor2"),
-	[2] = model:WaitForChild("Floor3")
+	[0] = FloorsGroup:WaitForChild("Floor1"),
+	[1] = FloorsGroup:WaitForChild("Floor2"),
+	[2] = FloorsGroup:WaitForChild("Floor3")
 }
 
 ----- hauteur de chaque étage
@@ -60,59 +66,79 @@ local Hauteur_floors = {
 
 
 -- Récupération des boutons
-local ButtonsExt = model:WaitForChild("BoutonsExt")
+local ButtonsExt = Exterior:WaitForChild("BoutonsExt")
 local externalButtons = {
 	[0] = ButtonsExt:WaitForChild("ExternalButton1"), -- Le bouton au RDC
 	[1] = ButtonsExt:WaitForChild("ExternalButton2"), -- Le bouton au 1er
 	[2] = ButtonsExt:WaitForChild("ExternalButton3"), -- Le bouton au 2ème
 }
 
-local carButtons = car:WaitForChild("Boutons")
-local ButtonSound = carButtons:WaitForChild("ButtonSound") -- Son bouton click
+----- Initialisation des éléments pour car boutons ----- 
+local CarButtons = CommandBoard:WaitForChild("Boutons")
+local Button1 = CarButtons:WaitForChild("Button1")
+local Button2 = CarButtons:WaitForChild("Button2")
+local Button3 = CarButtons:WaitForChild("Button3")
+local ButtonDisco = CarButtons:WaitForChild("ButtonDisco")
+local ButtonSound = CarButtons:WaitForChild("ButtonSound") -- Son bouton click
+
+
 local buttons = {
-	[0] = carButtons:WaitForChild("Bouton1"),
-	[1] = carButtons:WaitForChild("Bouton2"),
-	[2] = carButtons:WaitForChild("Bouton3"),
-	[10] = carButtons:WaitForChild("BoutonDisco");
+	[0] = Button1:WaitForChild("Bouton1"),
+	[1] = Button2:WaitForChild("Bouton2"),
+	[2] = Button3:WaitForChild("Bouton3"),
+	[10] = ButtonDisco:WaitForChild("BoutonDisco");
 }
 
--- Récupération des portes !
-local Portes = model:WaitForChild("Doors")
--- Récupération portes extérieures
-local PortesExt = Portes:WaitForChild("DoorsExt")
-local PortesExt1 = PortesExt:WaitForChild("DoorsExt1") -- Groupe Portes RDC
-local PortesExt2 = PortesExt:WaitForChild("DoorsExt2") -- Groupe Portes 1er
-local PortesExt3 = PortesExt:WaitForChild("DoorsExt3") -- Groupe Portes 2ème
+-- Récupération des portes 
 
--- Récupération portes extérieures WAIT
+-- Récupération portes extérieures
+local PortesExt = Exterior:WaitForChild("DoorsExt")
+local PortesExt1 = PortesExt:WaitForChild("DoorsExt1") -- Groupe Portes RDC
+	local PortesExtLeft1 = PortesExt1:WaitForChild("LeftExtDoor1")
+	local PortesExtRight1 = PortesExt1:WaitForChild("RightExtDoor1")
+local PortesExt2 = PortesExt:WaitForChild("DoorsExt2") -- Groupe Portes 1er
+	local PortesExtLeft2 = PortesExt2:WaitForChild("LeftExtDoor2")
+	local PortesExtRight2 = PortesExt2:WaitForChild("RightExtDoor2")
+local PortesExt3 = PortesExt:WaitForChild("DoorsExt3") -- Groupe Portes 2ème
+	local PortesExtLeft3 = PortesExt3:WaitForChild("LeftExtDoor3")
+	local PortesExtRight3 = PortesExt3:WaitForChild("RightExtDoor3")
+
+-- Récupération portes extérieures 
 
 local externalDoors = {
 	
-	[0] = {Left = PortesExt1:WaitForChild("LeftExtDoor1"), -- Portes au RDC
-		   Right = PortesExt1:WaitForChild("RightExtDoor1")},
-	[1] = {Left = PortesExt2:WaitForChild("LeftExtDoor2"), -- Portes au 1er
-		   Right = PortesExt2:WaitForChild("RightExtDoor2")},
-	[2] = {Left = PortesExt3:WaitForChild("LeftExtDoor3"), -- Portes au 2ème
-		   Right = PortesExt3:WaitForChild("RightExtDoor3")}
+	[0] = {Left = PortesExtLeft1:WaitForChild("Door_Main"), -- Portes au RDC
+		   Right = PortesExtRight1:WaitForChild("Door_Main")},
+	[1] = {Left = PortesExtLeft2:WaitForChild("Door_Main"), -- Portes au 1er
+		   Right = PortesExtRight2:WaitForChild("Door_Main")},
+	[2] = {Left = PortesExtLeft3:WaitForChild("Door_Main"), -- Portes au 2ème
+		   Right = PortesExtRight3:WaitForChild("Door_Main")}
 }
 
 -- Récupération portes internes
-local PortesInt = car:WaitForChild("DoorsInt") 
--- Récupération portes internes WAIT
-local PortesIntG = PortesInt:WaitForChild("LeftIntDoor") 
-local PortesIntD = PortesInt:WaitForChild("RightIntDoor")
+local Portes = car:WaitForChild("Doors")
+local PortesG = Portes:WaitForChild("LeftWooden_Door") 
+local PortesD = Portes:WaitForChild("RightWooden_Door") 
+-- Récupération portes internes
+local PortesIntG = PortesG:WaitForChild("Door_Main")
+local PortesIntD = PortesD:WaitForChild("Door_Main")
 
 
 -- Récupération éléments de la cabine
-local Light = car:WaitForChild("Light")
-local Lumiere = Light:WaitForChild("Lumiere")
+-- récupération lumière
+local Roof = Structure:WaitForChild("Roof")
+local GroupLight = Roof:WaitForChild("Light")
+
+local CentralLight = GroupLight:WaitForChild("Light")
+
 
 
 -- Récupération disco
-local DiscoBall = car:WaitForChild("DiscoBall")
+local DiscoElements = Structure:WaitForChild("DiscoElements")
+local DiscoBall = DiscoElements:WaitForChild("DiscoBall")
 local Ball = DiscoBall:WaitForChild("Discoball")
 local Tige = DiscoBall:WaitForChild("Bar")
-local DiscoSol = car:WaitForChild("DiscoSol")
+local DiscoSol = DiscoElements:WaitForChild("DiscoSol")
 local DiscoCases = {
 	
 	[1] = DiscoSol:WaitForChild("DiscoCase1"),
@@ -231,11 +257,11 @@ local function CloseDoors(targetFloorIndex)
 
 	-- Portes Extérieures
 	local closeExtL = TweenService:Create(extDepart.Left, infoPorte, {CFrame = extDepart.Left.CFrame * CFrame.new(3, 0, 0)})
-	local closeExtR = TweenService:Create(extDepart.Right, infoPorte, {CFrame = extDepart.Right.CFrame * CFrame.new(-3, 0, 0)})
+	local closeExtR = TweenService:Create(extDepart.Right, infoPorte, {CFrame = extDepart.Right.CFrame * CFrame.new(3, 0, 0)})
 
 	-- Portes Intérieures
 	local closeIntL = TweenService:Create(PortesIntG, infoPorte, {CFrame = PortesIntG.CFrame * CFrame.new(3, 0, 0)})
-	local closeIntR = TweenService:Create(PortesIntD, infoPorte, {CFrame = PortesIntD.CFrame * CFrame.new(-3, 0, 0)})
+	local closeIntR = TweenService:Create(PortesIntD, infoPorte, {CFrame = PortesIntD.CFrame * CFrame.new(3, 0, 0)})
 
 	-- On lance les animations
 	-- On enlève les liens de WeldConstraint pour pouvoir les déplacer
@@ -266,11 +292,11 @@ local function OpenDoors(targetFloorIndex)
 
 	-- Portes Extérieures
 	local openExtL = TweenService:Create(extArrive.Left, infoPorte, {CFrame = extArrive.Left.CFrame * CFrame.new(-3, 0, 0)})
-	local openExtR = TweenService:Create(extArrive.Right, infoPorte, {CFrame = extArrive.Right.CFrame * CFrame.new(3, 0, 0)})
+	local openExtR = TweenService:Create(extArrive.Right, infoPorte, {CFrame = extArrive.Right.CFrame * CFrame.new(-3, 0, 0)})
 
 	-- Portes Intérieures
 	local openIntL = TweenService:Create(PortesIntG, infoPorte, {CFrame = PortesIntG.CFrame * CFrame.new(-3, 0, 0)})
-	local openIntR = TweenService:Create(PortesIntD, infoPorte, {CFrame = PortesIntD.CFrame * CFrame.new(3, 0, 0)})
+	local openIntR = TweenService:Create(PortesIntD, infoPorte, {CFrame = PortesIntD.CFrame * CFrame.new(-3, 0, 0)})
 
 	-- On lance les animations
 	-- On enlève les liens de WeldConstraint pour pouvoir les déplacer
@@ -300,9 +326,13 @@ end
 local function moveToFloor(targetFloorIndex)
 	
 	-- 1. Si on est déjà à l'étage demandé ou l'ascenseur est en mouvement, on ne fait rien
-	if estEnMouvement or etageActuel == targetFloorIndex then return end
+	if estEnMouvement or etageActuel == targetFloorIndex then 
+		print("meme etage")
+		return end
 	-- si le mode disco est activé
-	if isDiscoActive or estBoutonAllumerExt or estBoutonAllumerInt then return end
+	if isDiscoActive or estBoutonAllumerExt or estBoutonAllumerInt then 
+		print("mode disco ou bouton déja allumé")
+		return end
 	-- 2. On empêche de cliquer pendant le déplacement
 	estEnMouvement = true
 	
@@ -310,7 +340,7 @@ local function moveToFloor(targetFloorIndex)
 	-- Fermeture des portes 
 	CloseDoors(etageActuel)
 	
-	-- 2. Calcul de la durée avec ta formule : 4 + 2 * (|a - b| - 1)
+	-- 2. Calcul de la durée avec la formule de duree
 	local a = etageActuel+1
 	local b = targetFloorIndex+1
 	local dureeCalculee = 4 + 2 * (math.abs(a - b) - 1)
@@ -333,7 +363,8 @@ end)
 	-- 4. Exécution du mouvement
 	local targetPart = floors[targetFloorIndex]
 	local goal = {CFrame = targetPart.CFrame}
-	local tween = TweenService:Create(car.PrimaryPart, info, goal)
+	-- On créer le tween qui sera le mouvement qui animera le sol de l'ascenseur car avec l'info (vitesse, accélération, etc...) et le goal qui sera la position de l'étage final voulu
+	local tween = TweenService:Create(Elevatorcar_Floor, info, goal)
 
 	model:SetAttribute("Mooving", true) -- on actualise l'attribute de l'ascenseur pour savoir si la cage d'ascenseur se déplace
 	-- on lance l'animation de flèche selon si l'ascenseur va vers le haut ou bas 
@@ -376,6 +407,29 @@ local RetourDeLaBoule = false -- variable pour savoir si la boule est rentré da
 
 -- Multicolore sol et lumière
 local function DiscoSolAndLight()
+
+	-- Initialisation du dictionnaire qui va contenir les données initiales de chaque light qui va changer de couleur afin ensuite de tout remettre à la normal lorsque la fonction est finit
+
+	-- dictionnaire qui va contenir les données de chaque light que l'on va modifier 
+	local etatsInitiaux = {}
+	-- "objet" est l'objet/part contenu dans le model Light
+	for _, objet in pairs(GroupLight:GetDescendants()) do
+		-- on s'assure que l'objet enfant de Light dans l'aborescense est bien une part 
+		if objet:IsA("BasePart") then
+			-- On initialise une variable lumiereObjet qui est la surfaceLight attacher à notre part objet 
+			local lumiereObjet = objet:FindFirstChildOfClass("SurfaceLight")
+			-- On ajoute au dictionnaires la liste de données initiales de la light actuelle 
+			etatsInitiaux[objet] = {
+				Color = objet.Color,
+				Materiau = objet.Material,
+				LumiereColor = lumiereObjet.Color
+			}
+		end
+	end
+
+	
+	-- On va changer les couleurs de manières aléatoires des parts et des surfaceLight de chaque objet/part contenu dans le model Light
+	-- On fait apparaitre un nouveau thread pour pouvoir faire d'autre action pendant que la lumière change de couleur aléatoirement
 	task.spawn(function()
 		
 		for i=1, 9 do --pour les 9 cases on va mettre les 9 cases plus invisible 
@@ -383,21 +437,33 @@ local function DiscoSolAndLight()
 		end
 		
 		while DiscoAnimation do --tant qu'il y a disco
+			--On change les couleurs des cases de dancefloor disco
 			for i=1, 9 do --pour les 9 cases on va lancer le changement aléatoire couleur toutes les 0.2s 
 				DiscoCases[i].Color = Color3.fromRGB(math.random(50,255), math.random(50,255), math.random(50,255)) --limite dans le random pour éviter couleur trop sombre
 			end
-			Lumiere.Color = Color3.fromRGB(math.random(50,255), math.random(50,255), math.random(50,255)) -- on aplique l'effet couleur random à la lumière du plafond aussi
+
+			-- On va changer les couleurs des light ("objet" est le nom contenu dans la clé [] dans la liste etatsInitiaux mais qui correspond à l'adresse de l'objet réel contenu dans Light) 
+			for objet, _ in pairs(etatsInitiaux) do
+				objet.Color = Color3.fromRGB(math.random(50,255), math.random(50,255), math.random(50,255)) -- on aplique l'effet couleur random à la lumière du plafond aussi
+				objet.SurfaceLight.Color = Color3.fromRGB(math.random(50,255), math.random(50,255), math.random(50,255))
+			end
 			task.wait(0.2) -- petite attenten entre chaque changement de couleur
 		end
-		--Remise à la normal
-		Lumiere.Color = Color3.fromRGB(255, 253, 239) --on remet la couleur normal de la lumiere du plafond
+
+
+		-- On remet à l'état initial (couleur, matériau) chaque élément qui changer de couleur 
+		for objet, donnees in pairs(etatsInitiaux) do
+			objet.Color = donnees.Color --on remet la couleur initial qui était contenu dans notre dictionnaire
+			objet.Material = donnees.Materiau
+			objet.SurfaceLight.Color = donnees.LumiereColor -- On remet la bonne couleur de la SurfaceLight
+		end
 		for i=1, 9 do --pour les 9 cases on va mettre les 9 cases en invisible 
 			DiscoCases[i].Transparency = 1
 		end
 	end)
 end
 
-
+ 
 
 local dansesEnCours = {} -- Un dictionnaire vide : { [Joueur] = SaPisteDeDanse }  -- pour arrêter l'animation du joueur dansant précisément (pas tous à la fois)
 local function DiscoDance(player)
@@ -496,9 +562,9 @@ local function ActivateBouleDisco()
 		Ball.WeldConstraint.Enabled = false --on désactive le weld relier à l'ascenseur pour pouvoir faire bouger la boule
 		Tige.WeldConstraint.Enabled = false --on désactive le weld relier à l'ascenseur pour pouvoir faire bouger la tige
 		-- définition du tween pour descendre et pour remonter après
-		local allerBall = TweenService:Create(Ball, TrajetBouleDisco, {Position = Ball.Position + Vector3.new(0, -4.3 , 0)}) 
+		local allerBall = TweenService:Create(Ball, TrajetBouleDisco, {Position = Ball.Position + Vector3.new(0, -3.5 , 0)}) 
 		local retourBall = TweenService:Create(Ball, TrajetBouleDisco, {Position = Ball.Position}) 
-		local allerTige = TweenService:Create(Tige, TrajetBouleDisco, {Position = Tige.Position + Vector3.new(0, -4.3 , 0)}) 
+		local allerTige = TweenService:Create(Tige, TrajetBouleDisco, {Position = Tige.Position + Vector3.new(0, -3.5 , 0)}) 
 		local retourTige = TweenService:Create(Tige, TrajetBouleDisco, {Position = Tige.Position}) 
 		-- on lance l'aller pour descendre
 		allerBall:Play() 
@@ -550,7 +616,9 @@ end
 
 -- "player" joueur ayant activé la fonction (transmis par le bouton detector click)
 local function ActivateDisco(player)
-	if isDiscoActive or estEnMouvement or estBoutonAllumerExt or estBoutonAllumerInt  then return end --si le disco ou l'ascenseur est en mouvement est déjà actif, on ne fait rien
+	if isDiscoActive or estEnMouvement or estBoutonAllumerExt or estBoutonAllumerInt  then 
+		print("Disco déja activé")
+		return end --si le disco ou l'ascenseur est en mouvement est déjà actif, on ne fait rien
 	--si le bouton est appuyé on lance le mode disco
 	isDiscoActive = true --on active le disco
 	-- fermeture des portes 
@@ -562,6 +630,7 @@ local function ActivateDisco(player)
 	Signal_Demande_Affichage:Fire("STAR", Color3.fromRGB(255, 255, 0),0,"Compteur_elevator_action")
 	DiscoSound(13) --fonction musique disco
 	DiscoDance(player) --fonction danse 
+	print("le joueur danse")
 	DiscoSolAndLight()
 	ActivateBouleDisco()
 	task.wait(13) -- temps du mode disco
